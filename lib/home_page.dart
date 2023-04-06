@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_snakegame_firebase_hosting/blank_pixel.dart';
@@ -22,6 +23,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int rowSize = 10;
   int totalNumberOfSquare = 100;
+  int currentScore = 0;
 
   List<int> snakePos = [
     0,
@@ -31,13 +33,37 @@ class _HomePageState extends State<HomePage> {
   int foodPos = 55;
 
   void startGame() {
-    Timer.periodic(Duration(milliseconds: 200), (timer) {
-      setState(() {
-        // snakePos.add(snakePos.last + 1);
-        // snakePos.removeAt(0);
-        moveSnake();
-      });
-    });
+    Timer.periodic(
+      Duration(milliseconds: 200),
+      (timer) {
+        setState(
+          () {
+            // snakePos.add(snakePos.last + 1);
+            // snakePos.removeAt(0);
+            moveSnake();
+            if (gameOver()) {
+              timer.cancel();
+              showDialog(
+                context: context,
+                builder: (contex) {
+                  return AlertDialog(
+                    title: const Text("Game Over"),
+                    content: Text("your score is: ${currentScore.toString()}"),
+                  );
+                },
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  void eatFood() {
+    currentScore++;
+    while (snakePos.contains(foodPos)) {
+      foodPos = Random().nextInt(totalNumberOfSquare);
+    }
   }
 
   void moveSnake() {
@@ -49,7 +75,6 @@ class _HomePageState extends State<HomePage> {
           } else {
             snakePos.add(snakePos.last + 1);
           }
-          snakePos.removeAt(0);
         }
         break;
       case snak_Direction.left:
@@ -59,7 +84,6 @@ class _HomePageState extends State<HomePage> {
           } else {
             snakePos.add(snakePos.last - 1);
           }
-          snakePos.removeAt(0);
         }
         break;
       case snak_Direction.up:
@@ -69,7 +93,6 @@ class _HomePageState extends State<HomePage> {
           } else {
             snakePos.add(snakePos.last - rowSize);
           }
-          snakePos.removeAt(0);
         }
         break;
       case snak_Direction.down:
@@ -79,14 +102,28 @@ class _HomePageState extends State<HomePage> {
           } else {
             snakePos.add(snakePos.last + rowSize);
           }
-          snakePos.removeAt(0);
         }
         break;
       default:
     }
+    if (snakePos.last == foodPos) {
+      eatFood();
+    } else {
+      snakePos.removeAt(0);
+    }
   }
 
   var currentDirection = snak_Direction.right;
+
+  bool gameOver() {
+    List<int> snakeBody = snakePos.sublist(0, snakePos.length - 1);
+    if (snakeBody.contains(snakePos.last)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,7 +131,22 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           Expanded(
-            child: Container(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Current Scores"),
+                    Text(
+                      currentScore.toString(),
+                      style: const TextStyle(fontSize: 30),
+                    ),
+                  ],
+                ),
+                const Text("highScores...")
+              ],
+            ),
           ),
           Expanded(
             flex: 3,
